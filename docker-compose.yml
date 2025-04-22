@@ -1,0 +1,80 @@
+networks:
+  default:
+   name: proxy
+   external: true
+
+services:
+ app01-webserver:
+  image: nginx:stable-alpine
+  volumes:
+   - ./nginx:/etc/nginx/templates
+  environment:
+   - VIRTUAL_HOST=${host}
+   # LETSENCRYPT_HOST variable is for the nginxproxy/acme-companion image to create SSL certificates for
+   - LETSENCRYPT_HOST=${host}
+   # Comment NETWORK_ACCESS when running in production
+   - NETWORK_ACCESS=internal
+   - APP_STAGE=${app_stage}
+   - SERVER_NAME=${server_name}
+  restart: always
+
+ app01-db:
+  image: postgres:14
+  volumes:
+   - app01-db-data:/var/lib/postgresql/data
+  environment:
+   - POSTGRES_USER=odoo
+   - POSTGRES_PASSWORD_FILE=/run/secrets/db_key
+   - PGDATA=/var/lib/postgresql/data
+   - POSTGRES_DB=postgres
+  secrets:
+   - db_key
+  expose:
+   - '5432'
+  restart: always
+
+ dev-app01-app:
+  build:
+    context: .
+    dockerfile: ${build_stage}
+  profiles: 
+   - development
+  depends_on:
+   - app01-db
+  volumes:
+   - app01-data:/var/lib/odoo
+   - ./config:/etc/odoo
+   - ./extra-addons:/mnt/extra-addons
+  environment:
+   - PASSWORD_FILE=/run/secrets/db_key
+  secrets:
+   - db_key
+  expose:
+   - '8069'
+   - '8072'
+  restart: always
+
+ prod-app01-app:
+  image: # The location of the image created by the development stage needs to be referenced here. i.e. for a Docker hub image: 'account/image_name:release'
+  profiles:
+   - production
+  depends_on:
+   - app01-db
+  volumes:
+   - app01-data:/var/lib/odoo
+  environment:
+   - PASSWORD_FILE=/run/secrets/db_key
+  secrets:
+   - db_key
+  expose:
+   - '8069'
+   - '8072'
+  restart: always
+
+secrets:
+ db_key:
+  file: db_key
+
+volumes:
+ app01-db-data:
+ app01-data:

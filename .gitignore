@@ -1,0 +1,14 @@
+# secrets file
+db_key
+
+# VS-Code
+.vscode*
+
+# auto-generated windows
+.DS-Store
+
+# auto-generated apple
+**/__pycache__/
+
+# do not track environment variables for specific builds
+/.env/
