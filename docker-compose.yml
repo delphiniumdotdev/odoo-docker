@@ -9,9 +9,9 @@ services:
   volumes:
    - ./nginx:/etc/nginx/templates
   environment:
-   - VIRTUAL_HOST=${host}
+   - VIRTUAL_HOST=${virtual_host}
    # LETSENCRYPT_HOST variable is for the nginxproxy/acme-companion image to create SSL certificates for
-   - LETSENCRYPT_HOST=${host}
+   - LETSENCRYPT_HOST=${virtual_host}
    # Comment NETWORK_ACCESS when running in production
    - NETWORK_ACCESS=internal
    - APP_STAGE=${app_stage}
