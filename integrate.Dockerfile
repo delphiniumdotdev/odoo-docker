@@ -73,21 +73,26 @@ RUN pip3 install redis
 # Install Odoo
 ENV ODOO_VERSION 16.0
 ARG ODOO_RELEASE=latest
-ARG ODOO_SHA=afeb7a27c193173e499ad6c9e7d6c391e53b7834
-RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+ARG ODOO_SHA
+RUN latest_sha1=$(curl -sSL https://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/Packages | grep -e "^SHA1:" | sed "s/SHA1: //") \
+    && sha_value=${ODOO_SHA-${latest_sha1}} \
+    && curl -o odoo.deb -sSL https://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
+    && echo "${sha_value} odoo.deb" | sha1sum -c - \
     && apt-get update \
     && apt-get -y install --no-install-recommends ./odoo.deb \
     && rm -rf /var/lib/apt/lists/* odoo.deb
 
-# Copy entrypoint script and Odoo configuration file
-COPY ./entrypoint.sh /
-COPY ./config/odoo.conf /etc/odoo/
+# Copy entrypoint script and Odoo configuration files
+COPY config/odoo.conf /etc/odoo/
+COPY entrypoint.sh /
 COPY extra-addons/ /mnt/extra-addons/
+COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 # Set permissions
 RUN chown odoo /etc/odoo/odoo.conf \
-  && chown -R odoo /mnt/extra-addons
+  && chown odoo entrypoint.sh \
+  && chown -R odoo /mnt/extra-addons \
+  && chown -R odoo /usr/local/bin
 
 # Mount /var/lib/odoo to allow restoring filestore
 VOLUME ["/var/lib/odoo"]
@@ -97,8 +102,6 @@ EXPOSE 8069 8071 8072
 
 # Set the default config file
 ENV ODOO_RC /etc/odoo/odoo.conf
-
-COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 # Set default user when running the container
 USER odoo
