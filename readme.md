@@ -78,4 +78,4 @@ Start the container (change 'env.test' to 'env.prod' as appropriate):
 docker compose --profile production --env-file .env/.env.test up -d
 ```
 
-For production environments comment the NETWORK_ACCESS variable in the compose file. Also, these are the only files directories required in the production environment: config/, .env/, db_key, docker-compose.yml, nginx/
+For production environments comment the NETWORK_ACCESS variable in the compose file. Also, these are the only files and directories required in the production environment: config/, .env/, db_key, docker-compose.yml, nginx/.
